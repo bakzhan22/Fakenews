@@ -1,16 +1,3 @@
-"""
-=======================================================================
-  Подготовка финального датасета для Advisor Model
-  Источник: fakenews_dataset/train.tsv + test.tsv
-
-  Запуск ПОСЛЕ generate_explanations.py и generate_rag_explanations.py:
-    python prepare_advisor_dataset.py
-
-  Или всё сразу (без RAG):
-    python prepare_advisor_dataset.py --generate --model gpt-oss:120b
-=======================================================================
-"""
-
 import re
 import argparse
 import requests
@@ -73,16 +60,6 @@ def generate_from_tsv(tsv_path: str, model: str, limit: int = None) -> pd.DataFr
 
 
 def merge_and_clean(df_a: pd.DataFrame, df_b: pd.DataFrame = None) -> pd.DataFrame:
-    """
-    Объединяет датасеты по схеме статьи:
-      claim    ← df_a
-      ê_db     ← df_b (RAG) если есть, иначе df_a
-      ê_cs     ← df_a
-      ê_tx     ← df_a
-      label    ← df_a
-
-    Очищает ê_db от вердиктов-меток.
-    """
     VERDICT = re.compile(
         r"Вердикт\s*:\s*(TRUE|FALSE|UNVERIFIABLE)\.?\s*", re.IGNORECASE
     )
@@ -115,7 +92,6 @@ def merge_and_clean(df_a: pd.DataFrame, df_b: pd.DataFrame = None) -> pd.DataFra
 
 
 def check_leakage(df: pd.DataFrame):
-    """Быстрая проверка утечки меток."""
     print("\nПроверка leakage:")
     cols = ["evidence_explanation", "commonsense_explanation", "textual_explanation"]
     critical = ["TRUE", "FALSE", "Вердикт", "is_fake", "fake", "real"]
@@ -154,7 +130,6 @@ def check_leakage(df: pd.DataFrame):
 
 def main(args):
     if args.generate:
-        # Генерируем объяснения на лету
         print(f"\nГенерация объяснений (модуль A) из {args.train}...")
         df_a = generate_from_tsv(args.train, args.model, args.limit)
         df_a.to_csv("final_dataset_for_advisor.csv", index=False, encoding="utf-8-sig")
@@ -162,7 +137,6 @@ def main(args):
         df_b = None
 
     else:
-        # Загружаем уже готовые файлы
         print(f"\nЗагрузка готовых файлов...")
         df_a = pd.read_csv(args.data_a)
         print(f"  Датасет A: {len(df_a)} записей")
@@ -172,17 +146,14 @@ def main(args):
             df_b = pd.read_csv(args.data_b)
             print(f"  Датасет B: {len(df_b)} записей")
 
-    # Объединяем и очищаем
     print("\nОбъединение и очистка...")
     df_final = merge_and_clean(df_a, df_b)
 
     print(f"\nИтоговый датасет: {len(df_final)} записей")
     print(df_final["label"].value_counts().to_string())
 
-    # Проверка утечки
     check_leakage(df_final)
 
-    # Сохранение
     df_final.to_csv(args.output, index=False, encoding="utf-8-sig")
     print(f"\nСохранено: {args.output}")
 
