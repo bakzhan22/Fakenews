@@ -1,51 +1,51 @@
-# Advisor Model: классификация новостных заголовков с объяснениями и RAG
+# Advisor Model: News Headline Classification with Explanations and RAG
 
-Проект классифицирует новостные заголовки как согласующиеся (`agree`, класс `1`) или не согласующиеся (`disagree`, класс `0`) с доступными данными. Перед классификацией для каждого заголовка формируются три независимых объяснения:
+This project classifies whether a news headline agrees (`real`, class `1`) or disagrees (`fake`, class `0`) with the available evidence. Before classification, it generates three independent explanations for each headline:
 
-1. `evidence_explanation` — фактическое обоснование на основе статьи или RAG-поиска;
-2. `commonsense_explanation` — анализ логики и правдоподобности;
-3. `textual_explanation` — анализ стиля, эмоциональности и кликбейта.
+1. `evidence_explanation` — a factual explanation based on the article or RAG retrieval;
+2. `commonsense_explanation` — an analysis of logic and plausibility;
+3. `textual_explanation` — an analysis of style, emotional language, and clickbait.
 
-Заголовок и три объяснения кодируются общей Transformer-моделью. Затем двунаправленный cross-attention объединяет их представления, а классификатор выдаёт итоговый класс.
+The headline and the three explanations are encoded by a shared Transformer model. Bidirectional cross-attention then combines their representations, and a classifier produces the final class.
 
-> **Важно:** в текущей версии исходников есть несколько ошибок и несогласованностей, перечисленных в разделе [Известные проблемы](#известные-проблемы). Перед полным запуском пайплайна их необходимо исправить.
+> **Important:** the current source files contain several errors and inconsistencies that must be fixed before running the complete pipeline.
 
-## Состав проекта
+## Project Structure
 
-| Файл | Назначение |
+| File | Purpose |
 | --- | --- |
-| `bmwGpt2.py` | Индексация документов в ChromaDB и интерактивный гибридный RAG-поиск: векторный поиск + поиск по ключевым словам + Reciprocal Rank Fusion. |
-| `generate_explanations.py` | Генерация логического и текстового объяснений для датасета в формате FNC. |
-| `generate_rag_explanations.py` | Генерация фактических объяснений с использованием ChromaDB; при недоступности базы использует `articleBody`. |
-| `prepare_advisor_dataset.py` | Генерация или объединение объяснений, очистка утечек целевой метки и проверка датасета. |
-| `advisor1.py` | Обучение Advisor-модели, валидация и оценка на тестовой выборке. |
-| `test_predict.py` | Генерация объяснений, загрузка обученного checkpoint, предсказание и расчёт метрик. |
+| `bmwGpt2.py` | Indexes documents in ChromaDB and provides interactive hybrid RAG retrieval: vector search + keyword search + Reciprocal Rank Fusion. |
+| `generate_explanations.py` | Generates commonsense and textual explanations for an FNC-format dataset. |
+| `generate_rag_explanations.py` | Generates factual explanations using ChromaDB; falls back to `articleBody` when the database is unavailable. |
+| `prepare_advisor_dataset.py` | Generates or combines explanations, removes target-label leakage, and validates the dataset. |
+| `advisor1.py` | Trains the Advisor model and evaluates it on validation and test splits. |
+| `test_predict.py` | Generates explanations, loads a trained checkpoint, makes predictions, and calculates metrics. |
 
-## Общая схема
+## Overview
 
 ```mermaid
 flowchart TD
-    A["Заголовок и текст статьи"] --> B["Логическое объяснение"]
-    A --> C["Текстовое объяснение"]
-    A --> D["RAG / фактическое объяснение"]
+    A["Headline and article text"] --> B["Commonsense explanation"]
+    A --> C["Textual explanation"]
+    A --> D["RAG / factual explanation"]
     B --> E["Advisor Model"]
     C --> E
     D --> E
     A --> E
-    E --> F["agree / disagree"]
+    E --> F["real / fake"]
 ```
 
-## Требования
+## Requirements
 
-- Python 3.10 или новее;
-- Ollama с загруженной языковой моделью;
-- доступ к Hugging Face для первой загрузки `intfloat/multilingual-e5-large`;
-- CUDA-совместимая GPU рекомендуется для обучения и генерации, но код умеет работать на CPU;
-- достаточно дискового пространства для LLM, Transformer-модели и ChromaDB.
+- Python 3.10 or newer;
+- Ollama with a downloaded language model;
+- access to Hugging Face for the initial download of `intfloat/multilingual-e5-large`;
+- a CUDA-compatible GPU is recommended for training and generation, although the code can run on a CPU;
+- sufficient disk space for the LLM, Transformer model, and ChromaDB.
 
-Модель `gpt-oss:120b`, используемая по умолчанию, требует очень много памяти. Если она не помещается на вашем оборудовании, укажите более компактную модель там, где скрипт поддерживает `OLLAMA_MODEL` или параметр `--model`.
+The default `gpt-oss:120b` model requires a large amount of memory. If it does not fit on your hardware, select a smaller model where the script supports `OLLAMA_MODEL` or the `--model` argument.
 
-## Установка
+## Installation
 
 ```bash
 python -m venv .venv
@@ -59,16 +59,16 @@ pip install \
   pypdf openpyxl
 ```
 
-Установите и запустите Ollama, затем загрузите выбранную модель:
+Install and start Ollama, then download the selected model:
 
 ```bash
 ollama pull gpt-oss:120b
 ollama serve
 ```
 
-## Конфигурация
+## Configuration
 
-Создайте файл `.env` в корне проекта:
+Create a `.env` file in the project root:
 
 ```dotenv
 OLLAMA_HOST=http://localhost:11434
@@ -93,30 +93,30 @@ MIN_EVIDENCE_CHUNKS=2
 MIN_RRF_SCORE=0.028
 ```
 
-`generate_explanations.py` использует жёстко заданные значения `http://localhost:11434/api/generate` и `gpt-oss:120b`. `prepare_advisor_dataset.py` также использует фиксированный адрес Ollama, но имя модели принимает через `--model`.
+`generate_explanations.py` uses the hard-coded values `http://localhost:11434/api/generate` and `gpt-oss:120b`. `prepare_advisor_dataset.py` also uses a fixed Ollama address, but accepts the model name through `--model`.
 
-### TSV-датасет
+### TSV Dataset
 
-Для режима `prepare_advisor_dataset.py --generate` ожидается TSV-файл со столбцами:
+In `prepare_advisor_dataset.py --generate` mode, the TSV file must contain the following columns:
 
-- `title` — заголовок;
-- `is_fake` — числовая метка.
+- `title` — the headline;
+- `is_fake` — the numeric label.
 
-Проверьте семантику `is_fake`: в Advisor-модели класс `1` означает `agree`, тогда как в большинстве датасетов `is_fake=1` означает фейк. При необходимости инвертируйте метки.
+Verify the meaning of `is_fake`: in the Advisor model, class `1` means `agree`, while in most datasets `is_fake=1` means fake. Invert the labels if necessary.
 
-### Документы для RAG
+### Documents for RAG
 
-Поместите документы в каталог `data/`. Скрипт рекурсивно обрабатывает:
+Place documents in the `data/` directory. The script recursively processes:
 
-- `.csv` и `.xlsx` — ожидается текстовый столбец с именем `text`, `content`, `body`, `article`, `news`, `txt` или `текст`;
-- `.txt`;
-- `.pdf` с извлекаемым текстовым слоем.
+- `.csv` and `.xlsx` files — the text column must be named `text`, `content`, `body`, `article`, `news`, `txt`, or `текст`;
+- `.txt` files;
+- `.pdf` files with an extractable text layer.
 
-Для табличных файлов необязательный идентификатор может находиться в столбце `id`, `new_id`, `doc_id`, `document_id` или `news_id`.
+For tabular files, an optional identifier can be stored in a column named `id`, `new_id`, `doc_id`, `document_id`, or `news_id`.
 
-## Подготовка RAG-базы
+## Preparing the RAG Database
 
-Структура перед индексацией:
+Directory structure before indexing:
 
 ```text
 project/
@@ -128,23 +128,23 @@ project/
     └── source.txt
 ```
 
-Запуск:
+Run:
 
 ```bash
 python bmwGpt2.py
 ```
 
-Если коллекция пуста, документы разбиваются на чанки и сохраняются в `chromadb_gemini/`. После индексации запускается интерактивный режим:
+If the collection is empty, the documents are split into chunks and stored in `chromadb_gemini/`. After indexing, the interactive mode starts:
 
 ```text
-You: ваш вопрос
+You: your question
 ```
 
-Для выхода введите `exit` или `quit`. Прогресс индексации хранится в `.index_checkpoint.json`, поэтому после сбоя запуск можно продолжить.
+Enter `exit` or `quit` to stop. Indexing progress is stored in `.index_checkpoint.json`, so the process can resume after a failure.
 
-## Подготовка обучающего датасета
+## Preparing the Training Dataset
 
-### Вариант 1: генерация всех объяснений из TSV
+### Option 1: Generate All Explanations from TSV
 
 ```bash
 python prepare_advisor_dataset.py \
@@ -154,7 +154,7 @@ python prepare_advisor_dataset.py \
   --output advisor_dataset_final.csv
 ```
 
-Для пробного запуска можно ограничить число строк:
+Use `--limit` for a small trial run:
 
 ```bash
 python prepare_advisor_dataset.py \
@@ -164,9 +164,9 @@ python prepare_advisor_dataset.py \
   --output advisor_dataset_sample.csv
 ```
 
-### Вариант 2: отдельная генерация объяснений для FNC
+### Option 2: Generate FNC Explanations Separately
 
-После исправления параметра `--limit` в двух генераторах:
+After fixing the `--limit` argument in both generator scripts:
 
 ```bash
 python generate_explanations.py \
@@ -180,7 +180,7 @@ python generate_rag_explanations.py \
   --output phd_training_dataset_qwen.csv
 ```
 
-Затем объедините файлы:
+Then combine the files:
 
 ```bash
 python prepare_advisor_dataset.py \
@@ -189,19 +189,19 @@ python prepare_advisor_dataset.py \
   --output advisor_dataset_final.csv
 ```
 
-Объединение выполняется по позиции строк, а не по идентификатору. Оба файла должны содержать одинаковые примеры в одинаковом порядке.
+The files are combined by row position rather than by identifier. Both files must contain the same examples in the same order.
 
-Итоговый CSV должен содержать:
+The final CSV must contain:
 
 ```text
 claim,evidence_explanation,commonsense_explanation,textual_explanation,label
 ```
 
-Скрипт удаляет некоторые явные токены вердикта из объяснений, проверяет возможную утечку метки и оценивает сложность задачи простым TF-IDF-классификатором.
+The script removes several explicit verdict tokens from the explanations, checks for possible target-label leakage, and estimates task difficulty using a simple TF-IDF classifier.
 
-## Обучение Advisor Model
+## Training the Advisor Model
 
-После исправления `prepare_dataframe()` в `advisor1.py`:
+After fixing `prepare_dataframe()` in `advisor1.py`:
 
 ```bash
 python advisor1.py \
@@ -214,23 +214,23 @@ python advisor1.py \
   --save_path advisor_model_best.pt
 ```
 
-Полезные параметры:
+Useful arguments:
 
-| Параметр | По умолчанию | Назначение |
+| Argument | Default | Purpose |
 | --- | ---: | --- |
-| `--max_len` | `256` | Максимальная длина каждого входного текста. |
-| `--lr` | `1e-5` | Скорость обучения. |
-| `--weight_decay` | `0.01` | L2-регуляризация AdamW. |
-| `--freeze_layers` | `6` | Число замороженных нижних слоёв энкодера. |
-| `--class_weight` | `1.5` | Вес класса `disagree`. |
-| `--label_smoothing` | `0.1` | Сглаживание меток в CrossEntropyLoss. |
-| `--seed` | `42` | Seed разбиения и обучения. |
+| `--max_len` | `256` | Maximum length of each input text. |
+| `--lr` | `1e-5` | Learning rate. |
+| `--weight_decay` | `0.01` | AdamW L2 regularization. |
+| `--freeze_layers` | `6` | Number of lower encoder layers to freeze. |
+| `--class_weight` | `1.5` | Weight assigned to the `disagree` class. |
+| `--label_smoothing` | `0.1` | Label smoothing for `CrossEntropyLoss`. |
+| `--seed` | `42` | Seed used for splitting and training. |
 
-Данные делятся стратифицированно в пропорции `70% / 15% / 15%`. Лучший checkpoint выбирается по macro F1 на validation-части. После обучения печатаются accuracy, macro precision, macro recall, macro F1, classification report и confusion matrix.
+The data is split with stratification into `70% / 15% / 15%`. The best checkpoint is selected by macro F1 on the validation split. After training, the script prints accuracy, macro precision, macro recall, macro F1, a classification report, and a confusion matrix.
 
-## Тестирование и предсказание
+## Testing and Prediction
 
-После добавления столбца `label` в тестовый DataFrame или его вычисления из `Stance`:
+After adding a `label` column to the test DataFrame or deriving it from `Stance`:
 
 ```bash
 python test_predict.py \
@@ -241,41 +241,40 @@ python test_predict.py \
   --output test_predictions.csv
 ```
 
-Для короткого теста:
+For a short test:
 
 ```bash
 python test_predict.py --limit 50
 ```
 
-Для обработки диапазона строк:
+To process a row range:
 
 ```bash
 python test_predict.py --start 0 --end 1000 --output predictions_0000_1000.csv
 ```
 
-Результат содержит исходные данные, три объяснения, предсказанный класс и вероятности:
+The output contains the source data, three explanations, the predicted class, and probabilities:
 
 - `pred_label`;
 - `pred_veracity`;
 - `prob_disagree`;
 - `prob_agree`.
 
-## Архитектура Advisor Model
+## Advisor Model Architecture
 
-1. Заголовок и каждое из трёх объяснений независимо кодируются `AutoModel`.
-2. Для E5-моделей к заголовку добавляется префикс `query:`, к объяснениям — `passage:`.
-3. Фактическое, логическое и текстовое представления проходят через отдельные линейные проекции.
-4. Cross-attention выполняется в обоих направлениях: заголовок → объяснения и объяснения → заголовок.
-5. Классификатор получает конкатенацию исходного представления заголовка, двух attention-представлений и max-pooling по объяснениям.
-6. Выход — два логита для классов `disagree` и `agree`.
+1. The headline and each of the three explanations are independently encoded with `AutoModel`.
+2. For E5 models, the `query:` prefix is added to the headline and `passage:` to the explanations.
+3. The factual, commonsense, and textual representations pass through separate linear projections.
+4. Cross-attention is applied in both directions: headline → explanations and explanations → headline.
+5. The classifier receives a concatenation of the original headline representation, two attention-based representations, and max pooling over the explanations.
+6. The output consists of two logits for the `disagree` and `agree` classes.
 
+## Output Files
 
-## Выходные файлы
-
-| Файл | Содержимое |
+| File | Contents |
 | --- | --- |
-| `final_dataset_for_advisor.csv` | Заголовок, логическое и текстовое объяснения, метка. |
-| `phd_training_dataset_qwen.csv` | Заголовок, RAG-объяснение, метка. |
-| `advisor_dataset_final.csv` | Объединённый и очищенный обучающий датасет. |
-| `advisor_model_best.pt` | Лучшие веса Advisor-модели по validation macro F1. |
-| `test_predictions.csv` | Предсказания, вероятности и данные для расчёта метрик. |
+| `final_dataset_for_advisor.csv` | Headline, commonsense explanation, textual explanation, and label. |
+| `phd_training_dataset_qwen.csv` | Headline, RAG explanation, and label. |
+| `advisor_dataset_final.csv` | Combined and cleaned training dataset. |
+| `advisor_model_best.pt` | Best Advisor model weights selected by validation macro F1. |
+| `test_predictions.csv` | Predictions, probabilities, and data used to calculate metrics. |
