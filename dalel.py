@@ -21,7 +21,7 @@ from tqdm import tqdm
 
 
 DEFAULTS = dict(
-    data_a         = "final_dataset_for_advisor.csv",
+    data_a         = "final_dataset_for_dalel.csv",
     data_b         = "phd_training_dataset_qwen.csv",
     model_name     = "intfloat/multilingual-e5-large",
     max_len        = 256,
@@ -32,7 +32,7 @@ DEFAULTS = dict(
     num_workers    = 0,
     seed           = 42,
     merge_strategy = "best",
-    save_path      = "advisor_model_best.pt",
+    save_path      = "dalel_model_best.pt",
     history_path   = "training_history.csv",
 )
 
