@@ -1,4 +1,4 @@
-# Advisor Model: News Headline Classification with Explanations and RAG
+# DÄLEL Model: News Headline Classification with Explanations and RAG
 
 This project classifies whether a news headline agrees (`real`, class `1`) or disagrees (`fake`, class `0`) with the available evidence. Before classification, it generates three independent explanations for each headline:
 
@@ -18,7 +18,7 @@ The headline and the three explanations are encoded by a shared Transformer mode
 | `generate_explanations.py` | Generates commonsense and textual explanations for an FNC-format dataset. |
 | `generate_rag_explanations.py` | Generates factual explanations using ChromaDB; falls back to `articleBody` when the database is unavailable. |
 | `prepare_advisor_dataset.py` | Generates or combines explanations, removes target-label leakage, and validates the dataset. |
-| `advisor1.py` | Trains the Advisor model and evaluates it on validation and test splits. |
+| `advisor1.py` | Trains the DÄLEL model and evaluates it on validation and test splits. |
 | `test_predict.py` | Generates explanations, loads a trained checkpoint, makes predictions, and calculates metrics. |
 
 ## Overview
@@ -28,7 +28,7 @@ flowchart TD
     A["Headline and article text"] --> B["Commonsense explanation"]
     A --> C["Textual explanation"]
     A --> D["RAG / factual explanation"]
-    B --> E["Advisor Model"]
+    B --> E["DÄLEL Model"]
     C --> E
     D --> E
     A --> E
@@ -102,7 +102,7 @@ In `prepare_advisor_dataset.py --generate` mode, the TSV file must contain the f
 - `title` — the headline;
 - `is_fake` — the numeric label.
 
-Verify the meaning of `is_fake`: in the Advisor model, class `1` means `agree`, while in most datasets `is_fake=1` means fake. Invert the labels if necessary.
+Verify the meaning of `is_fake`: in the DÄLEL model, class `1` means `agree`, while in most datasets `is_fake=1` means fake. Invert the labels if necessary.
 
 ### Documents for RAG
 
@@ -199,7 +199,7 @@ claim,evidence_explanation,commonsense_explanation,textual_explanation,label
 
 The script removes several explicit verdict tokens from the explanations, checks for possible target-label leakage, and estimates task difficulty using a simple TF-IDF classifier.
 
-## Training the Advisor Model
+## Training the DÄLEL Model
 
 After fixing `prepare_dataframe()` in `advisor1.py`:
 
@@ -260,7 +260,7 @@ The output contains the source data, three explanations, the predicted class, an
 - `prob_disagree`;
 - `prob_agree`.
 
-## Advisor Model Architecture
+## DÄLEL Model Architecture
 
 1. The headline and each of the three explanations are independently encoded with `AutoModel`.
 2. For E5 models, the `query:` prefix is added to the headline and `passage:` to the explanations.
@@ -276,5 +276,5 @@ The output contains the source data, three explanations, the predicted class, an
 | `final_dataset_for_advisor.csv` | Headline, commonsense explanation, textual explanation, and label. |
 | `phd_training_dataset_qwen.csv` | Headline, RAG explanation, and label. |
 | `advisor_dataset_final.csv` | Combined and cleaned training dataset. |
-| `advisor_model_best.pt` | Best Advisor model weights selected by validation macro F1. |
+| `advisor_model_best.pt` | Best DÄLEL model weights selected by validation macro F1. |
 | `test_predictions.csv` | Predictions, probabilities, and data used to calculate metrics. |
