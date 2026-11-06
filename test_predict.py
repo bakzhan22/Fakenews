@@ -15,7 +15,7 @@ from sklearn.metrics import (
 load_dotenv()
 
 OLLAMA_URL  = os.getenv("OLLAMA_HOST", "http://localhost:11434") + "/api/generate"
-MODEL_NAME  = os.getenv("OLLAMA_MODEL", "gpt-oss:120b")
+MODEL_NAME  = os.getenv("OLLAMA_MODEL", "qwen-3.8:27b")
 CHROMA_DIR  = os.getenv("CHROMA_DIR",  "chromadb_gemini")
 COLLECTION  = os.getenv("CHROMA_COLLECTION", "gov_news_gemini")
 
@@ -301,7 +301,7 @@ if __name__ == "__main__":
     p = argparse.ArgumentParser(formatter_class=argparse.ArgumentDefaultsHelpFormatter)
     p.add_argument("--stances",    default="fakenews/test_stances_unlebeledb.csv")
     p.add_argument("--bodies",     default="fakenews/test_bodies.csv")
-    p.add_argument("--checkpoint", default="advisor_model_best.pt")
+    p.add_argument("--checkpoint", default="dalel_model_best.pt")
     p.add_argument("--model_name", default="intfloat/multilingual-e5-large")
     p.add_argument("--max_len",    type=int, default=256)
     p.add_argument("--output",     default="test_predictions.csv")
