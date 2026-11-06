@@ -43,7 +43,7 @@ flowchart TD
 - a CUDA-compatible GPU is recommended for training and generation, although the code can run on a CPU;
 - sufficient disk space for the LLM, Transformer model, and ChromaDB.
 
-The default `gpt-oss:120b` model requires a large amount of memory. If it does not fit on your hardware, select a smaller model where the script supports `OLLAMA_MODEL` or the `--model` argument.
+The default `qwen-3.8:27b` model requires a large amount of memory. If it does not fit on your hardware, select a smaller model where the script supports `OLLAMA_MODEL` or the `--model` argument.
 
 ## Installation
 
@@ -62,7 +62,7 @@ pip install \
 Install and start Ollama, then download the selected model:
 
 ```bash
-ollama pull gpt-oss:120b
+ollama pull qwen-3.8:27b
 ollama serve
 ```
 
