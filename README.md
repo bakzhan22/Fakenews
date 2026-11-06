@@ -17,8 +17,8 @@ The headline and the three explanations are encoded by a shared Transformer mode
 | `bmwGpt2.py` | Indexes documents in ChromaDB and provides interactive hybrid RAG retrieval: vector search + keyword search + Reciprocal Rank Fusion. |
 | `generate_explanations.py` | Generates commonsense and textual explanations for an FNC-format dataset. |
 | `generate_rag_explanations.py` | Generates factual explanations using ChromaDB; falls back to `articleBody` when the database is unavailable. |
-| `prepare_advisor_dataset.py` | Generates or combines explanations, removes target-label leakage, and validates the dataset. |
-| `advisor1.py` | Trains the DÄLEL model and evaluates it on validation and test splits. |
+| `prepare_dalel_dataset.py` | Generates or combines explanations, removes target-label leakage, and validates the dataset. |
+| `dalel.py` | Trains the DÄLEL model and evaluates it on validation and test splits. |
 | `test_predict.py` | Generates explanations, loads a trained checkpoint, makes predictions, and calculates metrics. |
 
 ## Overview
@@ -72,7 +72,7 @@ Create a `.env` file in the project root:
 
 ```dotenv
 OLLAMA_HOST=http://localhost:11434
-OLLAMA_MODEL=gpt-oss:120b
+OLLAMA_MODEL=qwen-3.8:27b
 
 EMBEDDING_MODEL=intfloat/multilingual-e5-large
 CHROMA_DIR=chromadb_gemini
@@ -93,11 +93,11 @@ MIN_EVIDENCE_CHUNKS=2
 MIN_RRF_SCORE=0.028
 ```
 
-`generate_explanations.py` uses the hard-coded values `http://localhost:11434/api/generate` and `gpt-oss:120b`. `prepare_advisor_dataset.py` also uses a fixed Ollama address, but accepts the model name through `--model`.
+`generate_explanations.py` uses the hard-coded values `http://localhost:11434/api/generate` and `qwen-3.8:27b`. `prepare_dalel_dataset.py` also uses a fixed Ollama address, but accepts the model name through `--model`.
 
 ### TSV Dataset
 
-In `prepare_advisor_dataset.py --generate` mode, the TSV file must contain the following columns:
+In `prepare_dalel_dataset.py --generate` mode, the TSV file must contain the following columns:
 
 - `title` — the headline;
 - `is_fake` — the numeric label.
@@ -150,8 +150,8 @@ Enter `exit` or `quit` to stop. Indexing progress is stored in `.index_checkpoin
 python prepare_advisor_dataset.py \
   --generate \
   --train fakenews_dataset/train.tsv \
-  --model gpt-oss:120b \
-  --output advisor_dataset_final.csv
+  --model qwen-3.8:27b \
+  --output dalel_dataset_final.csv
 ```
 
 Use `--limit` for a small trial run:
@@ -161,7 +161,7 @@ python prepare_advisor_dataset.py \
   --generate \
   --train fakenews_dataset/train.tsv \
   --limit 100 \
-  --output advisor_dataset_sample.csv
+  --output dalel_dataset_sample.csv
 ```
 
 ### Option 2: Generate FNC Explanations Separately
@@ -172,7 +172,7 @@ After fixing the `--limit` argument in both generator scripts:
 python generate_explanations.py \
   --stances fakenews/train_stances.csv \
   --bodies fakenews/train_bodies.csv \
-  --output final_dataset_for_advisor.csv
+  --output final_dataset_for_dalel.csv
 
 python generate_rag_explanations.py \
   --stances fakenews/train_stances.csv \
@@ -186,7 +186,7 @@ Then combine the files:
 python prepare_advisor_dataset.py \
   --data_a final_dataset_for_advisor.csv \
   --data_b phd_training_dataset_qwen.csv \
-  --output advisor_dataset_final.csv
+  --output dalel_dataset_final.csv
 ```
 
 The files are combined by row position rather than by identifier. Both files must contain the same examples in the same order.
@@ -201,7 +201,7 @@ The script removes several explicit verdict tokens from the explanations, checks
 
 ## Training the DÄLEL Model
 
-After fixing `prepare_dataframe()` in `advisor1.py`:
+After fixing `prepare_dataframe()` in `dalel.py`:
 
 ```bash
 python advisor1.py \
@@ -211,7 +211,7 @@ python advisor1.py \
   --model_name intfloat/multilingual-e5-large \
   --epochs 5 \
   --batch_size 8 \
-  --save_path advisor_model_best.pt
+  --save_path dalel_model_best.pt
 ```
 
 Useful arguments:
@@ -236,7 +236,7 @@ After adding a `label` column to the test DataFrame or deriving it from `Stance`
 python test_predict.py \
   --stances fakenews/test_stances.csv \
   --bodies fakenews/test_bodies.csv \
-  --checkpoint advisor_model_best.pt \
+  --checkpoint dalel_model_best.pt \
   --model_name intfloat/multilingual-e5-large \
   --output test_predictions.csv
 ```
@@ -273,8 +273,8 @@ The output contains the source data, three explanations, the predicted class, an
 
 | File | Contents |
 | --- | --- |
-| `final_dataset_for_advisor.csv` | Headline, commonsense explanation, textual explanation, and label. |
+| `final_dataset_for_dalel.csv` | Headline, commonsense explanation, textual explanation, and label. |
 | `phd_training_dataset_qwen.csv` | Headline, RAG explanation, and label. |
-| `advisor_dataset_final.csv` | Combined and cleaned training dataset. |
-| `advisor_model_best.pt` | Best DÄLEL model weights selected by validation macro F1. |
+| `dalel_dataset_final.csv` | Combined and cleaned training dataset. |
+| `dalel_model_best.pt` | Best DÄLEL model weights selected by validation macro F1. |
 | `test_predictions.csv` | Predictions, probabilities, and data used to calculate metrics. |
