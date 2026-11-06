@@ -4,7 +4,7 @@ import pandas as pd
 from tqdm import tqdm
 
 OLLAMA_URL = "http://localhost:11434/api/generate"
-MODEL_NAME = "gpt-oss:120b"
+MODEL_NAME = "qwen-3.8:27b"
 
 CS_PROMPT = """Ты — система анализа новостей. Оцени логику и правдоподобность заголовка, используя только здравый смысл.
 Не используй внешние факты. Не выноси вердикт — только анализируй внутреннюю логику и правдоподобность.
@@ -78,7 +78,7 @@ if __name__ == "__main__":
     p = argparse.ArgumentParser(formatter_class=argparse.ArgumentDefaultsHelpFormatter)
     p.add_argument("--stances", default="fakenews/train_stances.csv")
     p.add_argument("--bodies",  default="fakenews/train_bodies.csv")
-    p.add_argument("--output",  default="final_dataset_for_advisor.csv")
+    p.add_argument("--output",  default="final_dataset_for_dalel.csv")
     p.add_argument("--start",   type=int, default=None)
     p.add_argument("--end",     type=int, default=None)
     main(p.parse_args())
