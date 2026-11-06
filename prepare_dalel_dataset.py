@@ -23,7 +23,7 @@ DB_PROMPT = """Ты — система проверки фактов. Испол
 Фактическое обоснование (2-3 предложения, русский язык):"""
 
 
-def call_ollama(prompt: str, model: str = "gpt-oss:120b") -> str:
+def call_ollama(prompt: str, model: str = "qwen-3.8:27b") -> str:
     try:
         r = requests.post(OLLAMA_URL, json={
             "model": model, "prompt": prompt, "stream": False
@@ -181,9 +181,9 @@ if __name__ == "__main__":
     p.add_argument("--train",     default="fakenews_dataset/train.tsv")
     p.add_argument("--model",     default="gpt-oss:120b")
     p.add_argument("--limit",     type=int, default=None)
-    p.add_argument("--data_a",    default="final_dataset_for_advisor.csv",
+    p.add_argument("--data_a",    default="final_dataset_for_dalel.csv",
                    help="Готовый датасет модуля A")
     p.add_argument("--data_b",    default=None,
                    help="Готовый датасет модуля B (RAG), опционально")
-    p.add_argument("--output",    default="advisor_dataset_final.csv")
+    p.add_argument("--output",    default="dalel_dataset_final.csv")
     main(p.parse_args())
