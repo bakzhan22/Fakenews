@@ -9,7 +9,7 @@ import os
 load_dotenv()
 
 OLLAMA_URL   = os.getenv("OLLAMA_HOST", "http://localhost:11434") + "/api/generate"
-COMMON_MODEL = os.getenv("OLLAMA_MODEL", "gpt-oss:120b")
+COMMON_MODEL = os.getenv("OLLAMA_MODEL", "qwen-3.8:27b")
 CHROMA_DIR   = os.getenv("CHROMA_DIR", "chromadb_gemini")
 COLLECTION   = os.getenv("CHROMA_COLLECTION", "gov_news_gemini")
 
